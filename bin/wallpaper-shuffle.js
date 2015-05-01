@@ -59,7 +59,7 @@ if (argv._[0] === 'stop') {
 
   process.kill(pid, 'SIGINT');
 
-  fs.unlink(pid, function(err) {
+  fs.unlink(argv.pid, function(err) {
     if (err) throw err;
     process.exit();
   });
