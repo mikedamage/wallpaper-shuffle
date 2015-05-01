@@ -48,6 +48,11 @@ var argv    = require('yargs')
 
 var daemonScript = path.join(__dirname, '..', 'lib', 'daemon.js');
 
+if (argv._.length === 0) {
+  console.log(chalk.bold.red('Please give me a command!'));
+  process.exit(1);
+}
+
 if (argv._[0] === 'stop') {
   console.log(chalk.magenta('Stopping rotation'));
   var pid = fs.readFileSync(argv.pid);
