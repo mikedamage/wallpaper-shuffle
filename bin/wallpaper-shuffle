@@ -8,11 +8,16 @@
 
 'use strict';
 
+var fs      = require('fs');
+var os      = require('os');
 var path    = require('path');
-var glob    = require('glob');
 var pkg     = require(path.join(__dirname, '..', 'package.json'));
+var chalk   = require('chalk');
 var moment  = require('moment');
+var child   = require('child_process');
 var argv    = require('yargs')
+  .command('start', 'Begin rotating wallpapers')
+  .command('stop', 'Stop rotating wallpapers')
   .option('d', {
     description: 'Directory containing images',
     default: process.cwd(),
@@ -23,10 +28,15 @@ var argv    = require('yargs')
     default: '5 minutes',
     alias: 'interval'
   })
-  .option('p', {
+  .option('g', {
     description: 'Pattern of files to search for',
     default: '*.{png,jpg,jpeg}',
-    alias: 'pattern'
+    alias: 'glob'
+  })
+  .option('p', {
+    description: 'PID file',
+    default: path.join(os.tmpdir(), 'wallpaper-shuffle.pid'),
+    alias: 'pid'
   })
   .option('h', { alias: 'help' })
   .help('help')
@@ -34,10 +44,31 @@ var argv    = require('yargs')
   .version(pkg.version, 'version', 'Display version information')
   .argv;
 
+var daemonScript = path.join(__dirname, '..', 'lib', 'daemon.js');
+
+if (argv._[0] === 'stop') {
+  console.log(chalk.magenta('Stopping rotation'));
+  var pid = fs.readFileSync(argv.pid);
+  process.kill(pid, 'SIGINT');
+  process.exit();
+}
+
 var timeSplit    = argv.interval.split(' ');
 var timeNum      = parseFloat(timeSplit[0]);
 var timeUnits    = timeSplit.slice(1).join(' ');
 var interval     = moment.duration(timeNum, timeUnits);
 var milliseconds = interval.milliseconds;
+
+var daemon = child.spawn(daemonScript, [
+  argv.directory,  
+  argv.glob,
+  milliseconds
+]);
+
+fs.writeFile(argv.pid, daemon.pid, function(err) {
+  if (err) throw err;
+  console.log(chalk.green('Rotation started'));
+  process.exit();
+});
 
 // vim: set ft=javascript :
