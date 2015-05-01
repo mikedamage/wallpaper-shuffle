@@ -82,5 +82,3 @@ fs.writeFile(argv.pid, daemon.pid, function(err) {
   console.log(chalk.green('Rotation started'));
   process.exit();
 });
-
-// vim: set ft=javascript :
