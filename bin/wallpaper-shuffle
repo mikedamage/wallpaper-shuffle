@@ -1,0 +1,43 @@
+#!/usr/bin/env node
+/**
+ * Wallpaper Shuffle
+ * A daemon that randomly rotates wallpaper
+ */
+
+/* jshint node: true */
+
+'use strict';
+
+var path    = require('path');
+var glob    = require('glob');
+var pkg     = require(path.join(__dirname, '..', 'package.json'));
+var moment  = require('moment');
+var argv    = require('yargs')
+  .option('d', {
+    description: 'Directory containing images',
+    default: process.cwd(),
+    alias: 'directory'
+  })
+  .option('i', {
+    description: 'Transition interval (ex. 15M, 100S)',
+    default: '5 minutes',
+    alias: 'interval'
+  })
+  .option('p', {
+    description: 'Pattern of files to search for',
+    default: '*.{png,jpg,jpeg}',
+    alias: 'pattern'
+  })
+  .option('h', { alias: 'help' })
+  .help('help')
+  .option('v', { alias: 'version' })
+  .version(pkg.version, 'version', 'Display version information')
+  .argv;
+
+var timeSplit    = argv.interval.split(' ');
+var timeNum      = parseFloat(timeSplit[0]);
+var timeUnits    = timeSplit.slice(1).join(' ');
+var interval     = moment.duration(timeNum, timeUnits);
+var milliseconds = interval.milliseconds;
+
+// vim: set ft=javascript :

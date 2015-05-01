@@ -3,7 +3,8 @@
   "description": "Daemon that rotates desktop wallpaper",
   "version": "0.1.0",
   "dependencies": {
-    "forever-monitor": "^1.5.2",
+    "glob": "^5.0.5",
+    "moment": "^2.10.2",
     "wallpaper": "^1.0.0",
     "yargs": "^3.8.0"
   },
