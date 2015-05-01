@@ -54,6 +54,10 @@ if (argv._.length === 0) {
 }
 
 if (argv._[0] === 'stop') {
+  if (!fs.existsSync(argv.pid)) {
+    console.log(chalk.bold('Cannot stop something that is not running in the first place.'));
+    process.exit(1);
+  }
   console.log(chalk.magenta('Stopping rotation'));
   var pid = fs.readFileSync(argv.pid);
   process.kill(pid, 'SIGINT');
