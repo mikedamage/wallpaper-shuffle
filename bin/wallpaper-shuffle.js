@@ -20,6 +20,7 @@ var child   = require('child_process');
 var argv    = require('yargs')
   .command('start', 'Begin rotating wallpapers')
   .command('stop', 'Stop rotating wallpapers')
+  .command('status', 'Checks for a running wallpaper-shuffle process')
   .option('d', {
     description: 'Directory containing images',
     default: process.cwd(),
@@ -48,20 +49,42 @@ var argv    = require('yargs')
 
 var daemonScript = path.join(__dirname, '..', 'lib', 'daemon.js');
 
+var isRunning = function() {
+  return fs.existsSync(argv.pid);
+};
+
+var getPID = function() {
+  return fs.readFileSync(argv.pid);
+}
+
 if (argv._.length === 0) {
   console.log(chalk.bold.red('Please give me a command!'));
   process.exit(1);
 }
 
-if (argv._[0] === 'stop') {
-  if (!fs.existsSync(argv.pid)) {
-    console.log(chalk.bold('Cannot stop something that is not running in the first place.'));
+var command = argv._[0];
+
+if (command === 'stop') {
+  if (!isRunning()) {
+    console.log(chalk.red.bold('not running'));
     process.exit(1);
   }
-  console.log(chalk.magenta('Stopping rotation'));
-  var pid = fs.readFileSync(argv.pid);
-  process.kill(pid, 'SIGINT');
+
+  process.kill(getPID(), 'SIGINT');
   fs.unlinkSync(argv.pid);
+
+  console.log(chalk.bold.magenta('stopped'));
+  process.exit();
+}
+
+if (command === 'status') {
+  if (isRunning()) {
+    console.log(chalk.green.bold('running ') + '(pid: ' + getPID() + ')');
+  } else {
+    console.log(chalk.red.bold('not running'));
+  }
+
+  process.exit();
 }
 
 var timeSplit    = argv.interval.split(' ');
@@ -83,6 +106,6 @@ var daemon = child.spawn(daemonScript, [
 
 fs.writeFile(argv.pid, daemon.pid, function(err) {
   if (err) throw err;
-  console.log(chalk.green('Rotation started'));
+  console.log(chalk.green.bold('started'));
   process.exit();
 });
