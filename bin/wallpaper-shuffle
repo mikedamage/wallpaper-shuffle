@@ -51,8 +51,13 @@ var daemonScript = path.join(__dirname, '..', 'lib', 'daemon.js');
 if (argv._[0] === 'stop') {
   console.log(chalk.magenta('Stopping rotation'));
   var pid = fs.readFileSync(argv.pid);
+
   process.kill(pid, 'SIGINT');
-  process.exit();
+
+  fs.unlink(pid, function(err) {
+    if (err) throw err;
+    process.exit();
+  });
 }
 
 var timeSplit    = argv.interval.split(' ');
