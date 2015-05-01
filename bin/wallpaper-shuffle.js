@@ -56,13 +56,8 @@ if (argv._.length === 0) {
 if (argv._[0] === 'stop') {
   console.log(chalk.magenta('Stopping rotation'));
   var pid = fs.readFileSync(argv.pid);
-
   process.kill(pid, 'SIGINT');
-
-  fs.unlink(argv.pid, function(err) {
-    if (err) throw err;
-    process.exit();
-  });
+  fs.unlinkSync(argv.pid);
 }
 
 var timeSplit    = argv.interval.split(' ');
