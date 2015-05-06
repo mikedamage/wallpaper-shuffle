@@ -28,7 +28,7 @@ var argv    = require('yargs')
     alias: 'directory'
   })
   .option('i', {
-    description: 'Transition interval (ex. 15M, 100S)',
+    description: 'Transition interval (ex. "5 minutes", "1 hour")',
     default: '5 minutes',
     alias: 'interval'
   })
