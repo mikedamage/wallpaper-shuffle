@@ -21,7 +21,7 @@ var argv    = require('yargs')
   .command('start', 'Begin rotating wallpapers')
   .command('stop', 'Stop rotating wallpapers')
   .command('status', 'Checks for a running wallpaper-shuffle process')
-  .command('next', 'Manually witch to a new random wallpaper')
+  .command('next', 'Manually switch to a new random wallpaper')
   .option('d', {
     description: 'Directory containing images',
     default: process.cwd(),
