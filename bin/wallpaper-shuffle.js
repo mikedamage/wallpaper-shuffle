@@ -115,10 +115,28 @@ if (_.isEmpty(glob.sync(pathGlob))) {
 var daemon = child.spawn(daemonScript, [
   pathGlob,
   milliseconds
-]);
+], {
+  env: process.env,
+  stdio: [ 'ignore', 'ignore', 'ignore', 'ipc' ],
+  detached: true
+});
 
 fs.writeFile(argv.pid, daemon.pid, function(err) {
   if (err) throw err;
-  console.log(chalk.green.bold('started'));
-  process.exit();
 });
+
+fs.writeFileSync(argv.pid, String(daemon.pid));
+
+daemon.on('message', function(status) {
+  if (status.running) {
+    console.log(chalk.green.bold('running ') + '(pid: %d)', daemon.pid);
+    process.exit(0);
+  }
+
+  console.log(chalk.red.bold('error starting daemon'));
+  process.exit(1);
+})
+
+daemon.send({ pattern: pathGlob, interval: milliseconds });
+
+daemon.unref();
