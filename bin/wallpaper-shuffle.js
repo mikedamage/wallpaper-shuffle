@@ -46,6 +46,7 @@ var argv    = require('yargs')
   .help('help')
   .option('v', { alias: 'version' })
   .version(pkg.version, 'version', 'Display version information')
+  .example('$0 start -d ~/Photos/Wallpaper -i "30 minutes"')
   .argv;
 
 var daemonScript = path.join(__dirname, '..', 'lib', 'daemon.js');
