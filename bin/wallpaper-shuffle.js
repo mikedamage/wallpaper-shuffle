@@ -112,10 +112,7 @@ if (_.isEmpty(glob.sync(pathGlob))) {
   process.exit(1);
 }
 
-var daemon = child.spawn(daemonScript, [
-  pathGlob,
-  milliseconds
-], {
+var daemon = child.spawn(daemonScript, [], {
   env: process.env,
   stdio: [ 'ignore', 'ignore', 'ignore', 'ipc' ],
   detached: true
