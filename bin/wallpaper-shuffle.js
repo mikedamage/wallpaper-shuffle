@@ -21,6 +21,7 @@ var argv    = require('yargs')
   .command('start', 'Begin rotating wallpapers')
   .command('stop', 'Stop rotating wallpapers')
   .command('status', 'Checks for a running wallpaper-shuffle process')
+  .command('next', 'Manually witch to a new random wallpaper')
   .option('d', {
     description: 'Directory containing images',
     default: process.cwd(),
@@ -84,6 +85,17 @@ if (command === 'status') {
     console.log(chalk.red.bold('not running'));
   }
 
+  process.exit();
+}
+
+if (command === 'next') {
+  if (!isRunning()) {
+    console.log(chalk.red.bold('not running'));
+    process.exit(1);
+  }
+
+  process.kill(getPID(), 'SIGUSR2');
+  console.log(chalk.green.bold('changing wallpaper'));
   process.exit();
 }
 
