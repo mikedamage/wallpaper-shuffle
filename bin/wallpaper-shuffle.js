@@ -59,6 +59,76 @@ var getPID = function() {
   return fs.readFileSync(argv.pid);
 }
 
+var actions = {
+  start: function() {
+    var timeSplit    = argv.interval.split(' ');
+    var timeNum      = parseFloat(timeSplit[0]);
+    var timeUnits    = timeSplit.slice(1).join(' ');
+    var interval     = moment.duration(timeNum, timeUnits);
+    var milliseconds = interval.asMilliseconds();
+    var pathGlob     = path.join(argv.directory, argv.glob);
+
+    if (_.isEmpty(glob.sync(pathGlob))) {
+      console.log(chalk.bold.red('No wallpapers found: ') + argv.directory);
+      process.exit(1);
+    }
+
+    var daemon = child.spawn(daemonScript, [], {
+      env: process.env,
+      stdio: [ 'ignore', 'ignore', 'ignore', 'ipc' ],
+      detached: true
+    });
+
+    fs.writeFile(argv.pid, daemon.pid, function(err) {
+      if (err) throw err;
+    });
+
+    fs.writeFileSync(argv.pid, String(daemon.pid));
+
+    daemon.on('message', function(status) {
+      if (status.running) {
+        console.log(chalk.green.bold('running ') + '(pid: %d)', daemon.pid);
+        process.exit(0);
+      }
+      console.log(chalk.red.bold('error starting daemon'));
+      process.exit(1);
+    });
+
+    daemon.send({ pattern: pathGlob, interval: milliseconds });
+    daemon.unref();
+  },
+  stop: function() {
+    if (!isRunning()) {
+      console.log(chalk.bold.red('not running'));
+      process.exit(1);
+    }
+    process.kill(getPID(), 'SIGTERM');
+    fs.unlinkSync(argv.pid);
+    console.log(chalk.magenta.bold('stopped'));
+    process.exit();
+  },
+  pause: function() {
+
+  },
+  next: function() {
+    if (!isRunning()) {
+      console.log(chalk.red.bold('not running'));
+      process.exit(1);
+    }
+    process.kill(getPID(), 'SIGUSR2');
+    console.log(chalk.bold('changing wallpaper'));
+    process.exit();
+  },
+  status: function() {
+    if (isRunning()) {
+      console.log(chalk.green.bold('running ') + '(pid: %d)', getPID());
+    } else {
+      console.log(chalk.red.bold('not running'));
+    }
+    process.exit();
+  }
+};
+
 if (argv._.length === 0) {
   console.log(chalk.bold.red('Please give me a command!'));
   process.exit(1);
@@ -66,74 +136,9 @@ if (argv._.length === 0) {
 
 var command = argv._[0];
 
-if (command === 'stop') {
-  if (!isRunning()) {
-    console.log(chalk.red.bold('not running'));
-    process.exit(1);
-  }
-
-  process.kill(getPID(), 'SIGINT');
-  fs.unlinkSync(argv.pid);
-
-  console.log(chalk.bold.magenta('stopped'));
-  process.exit();
-}
-
-if (command === 'status') {
-  if (isRunning()) {
-    console.log(chalk.green.bold('running ') + '(pid: ' + getPID() + ')');
-  } else {
-    console.log(chalk.red.bold('not running'));
-  }
-
-  process.exit();
-}
-
-if (command === 'next') {
-  if (!isRunning()) {
-    console.log(chalk.red.bold('not running'));
-    process.exit(1);
-  }
-
-  process.kill(getPID(), 'SIGUSR2');
-  console.log(chalk.green.bold('changing wallpaper'));
-  process.exit();
-}
-
-var timeSplit    = argv.interval.split(' ');
-var timeNum      = parseFloat(timeSplit[0]);
-var timeUnits    = timeSplit.slice(1).join(' ');
-var interval     = moment.duration(timeNum, timeUnits);
-var milliseconds = interval.asMilliseconds();
-var pathGlob     = path.join(argv.directory, argv.glob);
-
-if (_.isEmpty(glob.sync(pathGlob))) {
-  console.log(chalk.bold.red('No wallpapers found: ') + argv.directory);
+if (!actions.hasOwnProperty(command)) {
+  console.log(chalk.red.bold('invalid command!'));
   process.exit(1);
 }
 
-var daemon = child.spawn(daemonScript, [], {
-  env: process.env,
-  stdio: [ 'ignore', 'ignore', 'ignore', 'ipc' ],
-  detached: true
-});
-
-fs.writeFile(argv.pid, daemon.pid, function(err) {
-  if (err) throw err;
-});
-
-fs.writeFileSync(argv.pid, String(daemon.pid));
-
-daemon.on('message', function(status) {
-  if (status.running) {
-    console.log(chalk.green.bold('running ') + '(pid: %d)', daemon.pid);
-    process.exit(0);
-  }
-
-  console.log(chalk.red.bold('error starting daemon'));
-  process.exit(1);
-})
-
-daemon.send({ pattern: pathGlob, interval: milliseconds });
-
-daemon.unref();
+actions[command].call(this);
