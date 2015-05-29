@@ -10,7 +10,7 @@ by Mike Green
 
 __Via NPM:__
 ```bash
-npm install wallpaper-shuffle
+npm install -g wallpaper-shuffle
 ```
 
 __Via Git:__
