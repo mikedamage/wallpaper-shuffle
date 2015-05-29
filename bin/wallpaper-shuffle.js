@@ -79,10 +79,6 @@ var actions = {
       detached: true
     });
 
-    fs.writeFile(argv.pid, daemon.pid, function(err) {
-      if (err) throw err;
-    });
-
     fs.writeFileSync(argv.pid, String(daemon.pid));
 
     daemon.on('message', function(status) {
