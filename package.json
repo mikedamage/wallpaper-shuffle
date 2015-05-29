@@ -15,10 +15,9 @@
     "wallpaper": "^1.0.0",
     "yargs": "^3.8.0"
   },
-  "private": true,
   "author": "Mike Green <mike.is.green@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git@greenhouse.damnserver.com:mikedamage/wallpaper-shuffle.git"
+    "url": "git@github.com:mikedamage/wallpaper-shuffle.git"
   }
 }
