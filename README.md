@@ -6,6 +6,21 @@ by Mike Green
 
 `wallpaper-shuffle` is a Node daemon that randomly rotates desktop wallpaper at a user specified interval.
 
+## Installaton
+
+__Via NPM:__
+```bash
+npm install wallpaper-shuffle
+```
+
+__Via Git:__
+```bash
+git clone https://github.com/mikedamage/wallpaper-shuffle.git
+cd wallpaper-shuffle
+npm install
+npm link
+```
+
 ## Usage
 
 ```
