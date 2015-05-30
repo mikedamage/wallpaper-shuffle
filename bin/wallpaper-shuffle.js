@@ -104,7 +104,13 @@ var actions = {
     process.exit();
   },
   pause: function() {
-
+    if (!isRunning()) {
+      console.log(chalk.bold.red('not running'));
+	     process.exit(1);
+    }
+    process.kill(getPID(), 'SIGINT');
+    console.log(chalk.bold.green('play/pause'));
+    process.exit();
   },
   next: function() {
     if (!isRunning()) {
