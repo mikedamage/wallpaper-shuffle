@@ -21,5 +21,6 @@
     "url": "git@github.com:mikedamage/wallpaper-shuffle.git"
   },
   "preferGlobal": true,
-  "keywords": [ "wallpaper", "desktop" ]
+  "keywords": [ "wallpaper", "desktop" ],
+  "license": "MIT"
 }
