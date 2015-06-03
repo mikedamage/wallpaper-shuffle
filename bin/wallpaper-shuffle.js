@@ -73,7 +73,7 @@ var countWallpapers = function(pathGlob) {
     }
   });
 
-  return deferred;
+  return deferred.promise;
 };
 
 var actions = {
@@ -91,7 +91,7 @@ var actions = {
       process.exit(1);
     }
 
-    return countWallpapers().then(function(count) {
+    return countWallpapers(pathGlob).then(function(count) {
       if (!count) {
         throw new Error('No wallpapers found!');
       }
