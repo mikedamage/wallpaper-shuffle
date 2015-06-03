@@ -9,7 +9,8 @@
 'use strict';
 
 var _       = require('lodash');
-var fs      = require('fs');
+var io      = require('q-io');
+//var fs      = require('fs');
 var os      = require('os');
 var path    = require('path');
 var glob    = require('glob');
@@ -52,11 +53,11 @@ var argv    = require('yargs')
 var daemonScript = path.join(__dirname, '..', 'lib', 'daemon.js');
 
 var isRunning = function() {
-  return fs.existsSync(argv.pid);
+  return io.exists(argv.pid);
 };
 
 var getPID = function() {
-  return fs.readFileSync(argv.pid);
+  return io.read(argv.pid);
 }
 
 var actions = {
@@ -94,19 +95,23 @@ var actions = {
     daemon.unref();
   },
   stop: function() {
-    if (!isRunning()) {
-      console.log(chalk.bold.red('not running'));
-      process.exit(1);
-    }
-    process.kill(getPID(), 'SIGTERM');
-    fs.unlinkSync(argv.pid);
-    console.log(chalk.magenta.bold('stopped'));
-    process.exit();
+    return isRunning().then(function(exists) {
+      if (exists) {
+        console.log(chalk.bold.red('not running'));
+        process.exit(1);
+      }
+
+      process.kill(getPID(), 'SIGTERM');
+      return io.remove(argv.pid);
+    }).then(function() {
+      console.log(chalk.magenta.bold('stopped'));
+      process.exit(0);
+    });
   },
   pause: function() {
     if (!isRunning()) {
       console.log(chalk.bold.red('not running'));
-	     process.exit(1);
+      process.exit(1);
     }
     process.kill(getPID(), 'SIGINT');
     console.log(chalk.bold.green('play/pause'));
