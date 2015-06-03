@@ -124,7 +124,7 @@ var actions = {
 
   stop: function() {
     return isRunning().then(function(exists) {
-      if (exists) {
+      if (!exists) {
         console.log(chalk.bold.red('not running'));
         process.exit(1);
       }
