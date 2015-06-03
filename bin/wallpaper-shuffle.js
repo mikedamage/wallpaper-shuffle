@@ -97,14 +97,16 @@ var actions = {
         detached: true
       });
 
-      return io.write(argv.pid, String(daemon.pid))
+      return io.write(argv.pid, String(daemon.pid)).then(function(pid) {
+        return daemon;
+      });
     }, function(err) {
       console.log(chalk.bold.red(err.message));
       process.exit(1);
-    }).then(function(pid) {
+    }).then(function(daemon) {
       daemon.on('message', function(status) {
         if (status.running) {
-          console.log(chalk.bold.green('running ') + '(pid: %s)', pid);
+          console.log(chalk.bold.green('running ') + '(pid: %s)', daemon.pid);
           process.exit(0);
         }
 
