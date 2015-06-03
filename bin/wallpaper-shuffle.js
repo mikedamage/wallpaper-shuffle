@@ -145,7 +145,7 @@ var actions = {
 
       return getPID();
     }).then(function(pid) {
-      process.kill(pid, 'SIGINT');
+      process.kill(pid, 'SIGUSR1');
       console.log(chalk.bold.green('play/pause'));
       process.exit();
     });
