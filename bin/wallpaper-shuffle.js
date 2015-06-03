@@ -86,11 +86,6 @@ var actions = {
     var milliseconds = interval.asMilliseconds();
     var pathGlob     = path.join(argv.directory, argv.glob);
 
-    if (_.isEmpty(glob.sync(pathGlob))) {
-      console.log(chalk.bold.red('No wallpapers found: ') + argv.directory);
-      process.exit(1);
-    }
-
     return countWallpapers(pathGlob).then(function(count) {
       if (!count) {
         throw new Error('No wallpapers found!');
