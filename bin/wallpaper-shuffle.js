@@ -9,8 +9,8 @@
 'use strict';
 
 var _       = require('lodash');
-var io      = require('q-io');
-//var fs      = require('fs');
+var Q       = require('q');
+var io      = require('q-io/fs');
 var os      = require('os');
 var path    = require('path');
 var glob    = require('glob');
@@ -57,10 +57,27 @@ var isRunning = function() {
 };
 
 var getPID = function() {
-  return io.read(argv.pid);
+  return io.read(argv.pid).then(function(pid) {
+    return parseInt(pid, 10);
+  });
 }
 
+var countWallpapers = function(pathGlob) {
+  var deferred = Q.defer();
+
+  glob(pathGlob, function(err, matches) {
+    if (err) {
+      deferred.resolve(0);
+    } else {
+      deferred.resolve(matches.length);
+    }
+  });
+
+  return deferred;
+};
+
 var actions = {
+
   start: function() {
     var timeSplit    = argv.interval.split(' ');
     var timeNum      = parseFloat(timeSplit[0]);
@@ -74,26 +91,37 @@ var actions = {
       process.exit(1);
     }
 
-    var daemon = child.spawn(daemonScript, [], {
-      env: process.env,
-      stdio: [ 'ignore', 'ignore', 'ignore', 'ipc' ],
-      detached: true
-    });
-
-    fs.writeFileSync(argv.pid, String(daemon.pid));
-
-    daemon.on('message', function(status) {
-      if (status.running) {
-        console.log(chalk.green.bold('running ') + '(pid: %d)', daemon.pid);
-        process.exit(0);
+    return countWallpapers().then(function(count) {
+      if (!count) {
+        throw new Error('No wallpapers found!');
       }
-      console.log(chalk.red.bold('error starting daemon'));
-      process.exit(1);
-    });
+    }).then(function() {
+      var daemon = child.spawn(daemonScript, [], {
+        env: process.env,
+        stdio: [ 'ignore', 'ignore', 'ignore', 'ipc' ],
+        detached: true
+      });
 
-    daemon.send({ pattern: pathGlob, interval: milliseconds });
-    daemon.unref();
+      return io.write(argv.pid, String(daemon.pid))
+    }, function(err) {
+      console.log(chalk.bold.red(err.message));
+      process.exit(1);
+    }).then(function(pid) {
+      daemon.on('message', function(status) {
+        if (status.running) {
+          console.log(chalk.bold.green('running ') + '(pid: %s)', pid);
+          process.exit(0);
+        }
+
+        console.log(chalk.bold.red('error starting daemon'));
+        process.exit(1);
+      });
+
+      daemon.send({ pattern: pathGlob, interval: milliseconds });
+      daemon.unref();
+    });
   },
+
   stop: function() {
     return isRunning().then(function(exists) {
       if (exists) {
@@ -101,39 +129,59 @@ var actions = {
         process.exit(1);
       }
 
-      process.kill(getPID(), 'SIGTERM');
+      return getPID();
+    }).then(function(pid) {
+      process.kill(pid, 'SIGTERM');
       return io.remove(argv.pid);
     }).then(function() {
       console.log(chalk.magenta.bold('stopped'));
       process.exit(0);
     });
   },
+
   pause: function() {
-    if (!isRunning()) {
-      console.log(chalk.bold.red('not running'));
-      process.exit(1);
-    }
-    process.kill(getPID(), 'SIGINT');
-    console.log(chalk.bold.green('play/pause'));
-    process.exit();
+    return isRunning().then(function(exists) {
+      if (!exists) {
+        console.log(chalk.bold.red('not running'));
+        process.exit(1);
+      }
+
+      return getPID();
+    }).then(function(pid) {
+      process.kill(pid, 'SIGINT');
+      console.log(chalk.bold.green('play/pause'));
+      process.exit();
+    });
   },
+
   next: function() {
-    if (!isRunning()) {
-      console.log(chalk.red.bold('not running'));
-      process.exit(1);
-    }
-    process.kill(getPID(), 'SIGUSR2');
-    console.log(chalk.bold('changing wallpaper'));
-    process.exit();
+    return isRunning().then(function(exists) {
+      if (!exists) {
+        console.log(chalk.bold.red('not running'));
+        process.exit(1);
+      }
+
+      return getPID();
+    }).then(function(pid) {
+      process.kill(pid, 'SIGUSR2');
+      console.log(chalk.bold.green('changing wallpaper'));
+      process.exit(0);
+    });
   },
+
   status: function() {
-    if (isRunning()) {
-      console.log(chalk.green.bold('running ') + '(pid: %d)', getPID());
-    } else {
-      console.log(chalk.red.bold('not running'));
-    }
-    process.exit();
+    return isRunning().then(function(exists) {
+      if (exists) {
+        return getPID();
+      }
+      throw new Error('not running');
+    }).then(function(pid) {
+      console.log(chalk.bold.green('running ') + '(pid %d)', pid);
+    }, function(err) {
+      console.log(chalk.bold.red(err.message));
+    }).done(function() { process.exit(); });
   }
+
 };
 
 if (argv._.length === 0) {
