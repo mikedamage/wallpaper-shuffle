@@ -60,7 +60,7 @@ var getPID = function() {
   return io.read(argv.pid).then(function(pid) {
     return parseInt(pid, 10);
   });
-}
+};
 
 var countWallpapers = function(pathGlob) {
   var deferred = Q.defer();
