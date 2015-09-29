@@ -8,17 +8,18 @@
 
 'use strict';
 
-var _       = require('lodash');
-var Q       = require('q');
-var io      = require('q-io/fs');
-var os      = require('os');
-var path    = require('path');
-var glob    = require('glob');
-var pkg     = require(path.join(__dirname, '..', 'package.json'));
-var chalk   = require('chalk');
-var moment  = require('moment');
-var child   = require('child_process');
-var argv    = require('yargs')
+var _          = require('lodash');
+var Q          = require('q');
+var io         = require('q-io/fs');
+var os         = require('os');
+var path       = require('path');
+var glob       = require('glob');
+var pkg        = require(path.join(__dirname, '..', 'package.json'));
+var chalk      = require('chalk');
+var moment     = require('moment');
+var prettyjson = require('prettyjson');
+var child      = require('child_process');
+var argv       = require('yargs')
   .command('start', 'Begin rotating wallpapers')
   .command('stop', 'Stop rotating wallpapers')
   .command('status', 'Checks for a running wallpaper-shuffle process')
@@ -40,7 +41,7 @@ var argv    = require('yargs')
   })
   .option('p', {
     description: 'PID file',
-    default: path.join(os.tmpdir(), 'wallpaper-shuffle.pid'),
+    default: path.join(os.tmpdir(), 'wallpaper-shuffle.json'),
     alias: 'pid'
   })
   .option('h', { alias: 'help' })
@@ -56,9 +57,13 @@ var isRunning = function() {
   return io.exists(argv.pid);
 };
 
+var getProcessJSON = function() {
+  return io.read(argv.pid).then(JSON.parse);
+};
+
 var getPID = function() {
-  return io.read(argv.pid).then(function(pid) {
-    return parseInt(pid, 10);
+  return getProcessJSON().then(function(json) {
+    return json.pid;
   });
 };
 
@@ -97,7 +102,16 @@ var actions = {
         detached: true
       });
 
-      return io.write(argv.pid, String(daemon.pid)).then(function(pid) {
+      var processInfo = {
+        pid: daemon.pid,
+        interval: {
+          raw: argv.interval,
+          milliseconds: milliseconds
+        },
+        pathGlob: pathGlob
+      };
+
+      return io.write(argv.pid, JSON.stringify(processInfo)).then(function(pid) {
         return daemon;
       });
     }, function(err) {
@@ -169,11 +183,13 @@ var actions = {
   status: function() {
     return isRunning().then(function(exists) {
       if (exists) {
-        return getPID();
+        return getProcessJSON();
       }
       throw new Error('not running');
-    }).then(function(pid) {
-      console.log(chalk.bold.green('running ') + '(pid %d)', pid);
+    }).then(function(json) {
+      json.status = 'running';
+
+      console.log(prettyjson.render(json));
     }, function(err) {
       console.log(chalk.bold.red(err.message));
     }).done(function() { process.exit(); });
