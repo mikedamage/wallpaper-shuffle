@@ -7,15 +7,15 @@
   },
   "main": "bin/wallpaper-shuffle.js",
   "dependencies": {
-    "chalk": "^1.0.0",
-    "glob": "^5.0.5",
-    "lodash": "^3.7.0",
-    "moment": "^2.10.2",
+    "chalk": "^1.1.1",
+    "glob": "^5.0.15",
+    "lodash": "^3.10.1",
+    "moment": "^2.10.6",
     "q": "^1.4.1",
     "q-io": "^1.13.1",
     "random-js": "^1.0.4",
-    "wallpaper": "^1.0.0",
-    "yargs": "^3.8.0"
+    "wallpaper": "^1.1.0",
+    "yargs": "^3.26.0"
   },
   "author": "Mike Green <mike.is.green@gmail.com>",
   "repository": {
