@@ -209,4 +209,4 @@ if (!actions.hasOwnProperty(command)) {
   process.exit(1);
 }
 
-actions[command].call(this);
+actions[command]();
