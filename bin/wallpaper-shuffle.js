@@ -44,6 +44,11 @@ var argv       = require('yargs')
     default: path.join(os.tmpdir(), 'wallpaper-shuffle.json'),
     alias: 'pid'
   })
+  .option('n', {
+    description: 'Enable desktop notifications',
+    default: false,
+    alias: 'notify'
+  })
   .option('h', { alias: 'help' })
   .help('help')
   .option('v', { alias: 'version' })
@@ -128,7 +133,7 @@ var actions = {
         process.exit(1);
       });
 
-      daemon.send({ pattern: pathGlob, interval: milliseconds });
+      daemon.send({ pattern: pathGlob, interval: milliseconds, notify: argv.notify });
       daemon.unref();
     });
   },
