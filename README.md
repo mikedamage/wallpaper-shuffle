@@ -31,14 +31,18 @@ Commands:
   next    Manually switch to a new random wallpaper
 
 Options:
-  -d, --directory  Directory containing images [default: $PWD]
+  -d, --directory  Directory containing images
+                 [default: $PWD]
   -i, --interval   Transition interval (ex. "5 minutes", "1 hour")
                                                           [default: "5 minutes"]
   -g, --glob       Pattern of files to search for  [default: "*.{png,jpg,jpeg}"]
-  -p, --pid        PID file         [default: "$TMPDIR/wallpaper-shuffle.pid"]
-  -h, --help       Show help
-  -v, --version    Display version information
+  -p, --pid        PID file                                            [default:
+      "$TMPDIR/wallpaper-shuffle.json"]
+  -n, --notify     Enable desktop notifications                 [default: false]
+  -h, --help       Show help                                           [boolean]
+  -v, --version    Display version information                         [boolean]
 
 Examples:
-  wallpaper-shuffle start -d ~/Photos/Wallpaper -i "30 minutes"
+  wallpaper-shuffle start -d
+  ~/Photos/Wallpaper -i "30 minutes"
 ```
