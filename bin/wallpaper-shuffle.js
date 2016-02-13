@@ -86,14 +86,18 @@ var countWallpapers = function(pathGlob) {
   return deferred.promise;
 };
 
+var parseTime = function(time) {
+  var split = time.split(' ');
+  var timeNum = parseFloat(split[0]);
+  var timeUnits = split.slice(1).join(' ');
+  var interval = moment.duration(timeNum, timeUnits);
+  return interval.asMilliseconds();
+};
+
 var actions = {
 
   start: function() {
-    var timeSplit    = argv.interval.split(' ');
-    var timeNum      = parseFloat(timeSplit[0]);
-    var timeUnits    = timeSplit.slice(1).join(' ');
-    var interval     = moment.duration(timeNum, timeUnits);
-    var milliseconds = interval.asMilliseconds();
+    var milliseconds = parseTime(argv.interval);
     var pathGlob     = path.join(argv.directory, argv.glob);
 
     return countWallpapers(pathGlob).then(function(count) {
