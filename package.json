@@ -1,7 +1,7 @@
 {
   "name": "wallpaper-shuffle",
   "description": "Daemon that rotates desktop wallpaper",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "bin": {
     "wallpaper-shuffle": "./bin/wallpaper-shuffle.js"
   },
