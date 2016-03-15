@@ -2,6 +2,8 @@
 
 by Mike Green
 
+[![npm version](https://badge.fury.io/js/wallpaper-shuffle.svg)](https://badge.fury.io/js/wallpaper-shuffle)
+
 ## Summary
 
 `wallpaper-shuffle` is a Node daemon that randomly rotates desktop wallpaper at a user specified interval.
