@@ -100,7 +100,14 @@ var actions = {
     var milliseconds = parseTime(argv.interval);
     var pathGlob     = path.join(argv.directory, argv.glob);
 
-    return countWallpapers(pathGlob).then(function(count) {
+    return isRunning().then(function(running) {
+      if (running) {
+        console.log(chalk.yellow.bold('Already running!'));
+        process.exit();
+      }
+    }).then(function() {
+      return countWallpapers(pathGlob);
+    }).then(function(count) {
       if (!count) {
         throw new Error('No wallpapers found!');
       }
@@ -194,7 +201,9 @@ var actions = {
       if (exists) {
         return getProcessJSON();
       }
-      throw new Error('not running');
+      var json = { status: 'not running' }
+      console.log(prettyjson.render(json));
+      process.exit();
     }).then(function(json) {
       json.status = 'running';
 
