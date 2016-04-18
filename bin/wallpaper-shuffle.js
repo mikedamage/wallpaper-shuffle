@@ -201,7 +201,7 @@ var actions = {
       if (exists) {
         return getProcessJSON();
       }
-      var json = { status: 'not running' }
+      var json = { status: 'not running' };
       console.log(prettyjson.render(json));
       process.exit();
     }).then(function(json) {
