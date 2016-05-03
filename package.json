@@ -29,5 +29,9 @@
     "wallpaper",
     "desktop"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "babel-cli": "^6.8.0",
+    "babel-preset-es2015": "^6.6.0"
+  }
 }
