@@ -4,22 +4,20 @@
  * A daemon that randomly rotates wallpaper
  */
 
-/* jshint node: true */
+import _          from 'lodash';
+import Q          from 'q';
+import io         from 'q-io/fs';
+import os         from 'os';
+import path       from 'path';
+import glob       from 'glob';
+import pkg        from '../../package.json';
+import chalk      from 'chalk';
+import moment     from 'moment';
+import prettyjson from 'prettyjson';
+import child      from 'child_process';
+import yargs      from 'yargs';
 
-'use strict';
-
-var _          = require('lodash');
-var Q          = require('q');
-var io         = require('q-io/fs');
-var os         = require('os');
-var path       = require('path');
-var glob       = require('glob');
-var pkg        = require(path.join(__dirname, '..', 'package.json'));
-var chalk      = require('chalk');
-var moment     = require('moment');
-var prettyjson = require('prettyjson');
-var child      = require('child_process');
-var argv       = require('yargs')
+const argv = yargs
   .command('start', 'Begin rotating wallpapers')
   .command('stop', 'Stop rotating wallpapers')
   .command('status', 'Checks for a running wallpaper-shuffle process')
@@ -56,26 +54,15 @@ var argv       = require('yargs')
   .example('$0 start -d ~/Photos/Wallpaper -i "30 minutes"')
   .argv;
 
-var daemonScript = path.join(__dirname, '..', 'lib', 'daemon.js');
+const daemonScript = path.join(__dirname, '..', 'lib', 'daemon.js');
 
-var isRunning = function() {
-  return io.exists(argv.pid);
-};
+const isRunning       = () => io.exists(argv.pid);
+const getProcessJSON  = () => io.read(argv.pid).then(JSON.parse);
+const getPID          = () => getProcessJSON().then((json) => json.pid);
+const countWallpapers = (pathGlob) => {
+  let deferred = Q.defer();
 
-var getProcessJSON = function() {
-  return io.read(argv.pid).then(JSON.parse);
-};
-
-var getPID = function() {
-  return getProcessJSON().then(function(json) {
-    return json.pid;
-  });
-};
-
-var countWallpapers = function(pathGlob) {
-  var deferred = Q.defer();
-
-  glob(pathGlob, function(err, matches) {
+  glob(pathGlob, (err, matches) => {
     if (err) {
       deferred.resolve(0);
     } else {
@@ -86,57 +73,62 @@ var countWallpapers = function(pathGlob) {
   return deferred.promise;
 };
 
-var parseTime = function(time) {
-  var split = time.split(' ');
-  var timeNum = parseFloat(split[0]);
-  var timeUnits = split.slice(1).join(' ');
-  var interval = moment.duration(timeNum, timeUnits);
+const parseTime = (time) => {
+  let split     = time.split(' ');
+  let timeNum   = parseFloat(split[0]);
+  let timeUnits = split.slice(1).join(' ');
+  let interval  = moment.duration(timeNum, timeUnits);
   return interval.asMilliseconds();
+}
+
+const getPIDIfRunning = (exists) => {
+  if (!exists) {
+    console.log(chalk.bold.red('not running'));
+    process.exit(1);
+  }
+
+  return getPID();
 };
 
-var actions = {
+const actions = {
+  start() {
+    let milliseconds = parseTime(argv.interval);
+    let pathGlob = path.join(argv.directory, argv.glob);
 
-  start: function() {
-    var milliseconds = parseTime(argv.interval);
-    var pathGlob     = path.join(argv.directory, argv.glob);
-
-    return isRunning().then(function(running) {
+    return isRunning().then((running) => {
       if (running) {
         console.log(chalk.yellow.bold('Already running!'));
         process.exit();
       }
-    }).then(function() {
-      return countWallpapers(pathGlob);
-    }).then(function(count) {
+    })
+    .then(() => countWallpapers(pathGlob))
+    .then((count) => {
       if (!count) {
         throw new Error('No wallpapers found!');
       }
-    }).then(function() {
-      var daemon = child.spawn(daemonScript, [], {
+    })
+    .then(() => {
+      let daemon = child.spawn(daemonScript, [], {
         env: process.env,
         stdio: [ 'ignore', 'ignore', 'ignore', 'ipc' ],
         detached: true
       });
 
-      var processInfo = {
+      let processInfo = {
+        pathGlob,
         pid: daemon.pid,
         interval: {
           raw: argv.interval,
           milliseconds: milliseconds
-        },
-        pathGlob: pathGlob
+        }
       };
 
-      return io.write(argv.pid, JSON.stringify(processInfo)).then(function(pid) {
-        return daemon;
-      });
-    }, function(err) {
-      console.log(chalk.bold.red(err.message));
-      process.exit(1);
-    }).then(function(daemon) {
-      daemon.on('message', function(status) {
+      return io.write(argv.pid, JSON.stringify(processInfo)).then((pid) => daemon);
+    })
+    .then((daemon) => {
+      daemon.on('message', (status) => {
         if (status.running) {
-          console.log(chalk.bold.green('running ') + '(pid: %s)', daemon.pid);
+          console.log(prettyjson.render({ status: 'running', pid: daemon.pid }));
           process.exit(0);
         }
 
@@ -149,68 +141,54 @@ var actions = {
     });
   },
 
-  stop: function() {
-    return isRunning().then(function(exists) {
-      if (!exists) {
-        console.log(chalk.bold.red('not running'));
-        process.exit(1);
-      }
-
-      return getPID();
-    }).then(function(pid) {
-      process.kill(pid, 'SIGTERM');
-      return io.remove(argv.pid);
-    }).then(function() {
-      console.log(chalk.magenta.bold('stopped'));
-      process.exit(0);
-    });
+  stop() {
+    return isRunning()
+      .then(getPIDIfRunning)
+      .then((pid) => {
+        process.kill(pid, 'SIGTERM');
+        return io.remove(argv.pid);
+      })
+      .then(() => {
+        console.log(chalk.magenta.bold('stopped'));
+        process.exit(0);
+      });
   },
 
-  pause: function() {
-    return isRunning().then(function(exists) {
-      if (!exists) {
-        console.log(chalk.bold.red('not running'));
-        process.exit(1);
-      }
-
-      return getPID();
-    }).then(function(pid) {
-      process.kill(pid, 'SIGUSR1');
-      console.log(chalk.bold.green('play/pause'));
-      process.exit();
-    });
+  pause() {
+    return isRunning()
+      .then(getPIDIfRunning)
+      .then((pid) => {
+        process.kill(pid, 'SIGUSR1');
+        console.log(chalk.bold.green('play/pause'));
+        process.exit();
+      });
   },
 
-  next: function() {
-    return isRunning().then(function(exists) {
-      if (!exists) {
-        console.log(chalk.bold.red('not running'));
-        process.exit(1);
-      }
-
-      return getPID();
-    }).then(function(pid) {
-      process.kill(pid, 'SIGUSR2');
-      console.log(chalk.bold.green('changing wallpaper'));
-      process.exit(0);
-    });
+  next() {
+    return isRunning()
+      .then(getPIDIfRunning)
+      .then((pid) => {
+        process.kill(pid, 'SIGUSR2');
+        console.log(chalk.bold.green('changing wallpaper'));
+        process.exit(0);
+      });
   },
 
-  status: function() {
-    return isRunning().then(function(exists) {
-      if (exists) {
-        return getProcessJSON();
-      }
-      var json = { status: 'not running' };
-      console.log(prettyjson.render(json));
-      process.exit();
-    }).then(function(json) {
-      json.status = 'running';
-
-      console.log(prettyjson.render(json));
-    }, function(err) {
-      console.log(chalk.bold.red(err.message));
-    }).done(function() { process.exit(); });
+  status() {
+    return isRunning()
+      .then((exists) => {
+        if (exists) {
+          return getProcessJSON();
+        }
+        let json = { status: 'not running' };
+        console.log(prettyjson.render(json));
+        process.exit();
+      })
+      .then((json) => {
+        json.status = 'running';
+        console.log(prettyjson.render(json));
+      }, (err) => console.log(chalk.bold.red(err.message)))
+      .done(() => process.exit());
   }
 
 };
