@@ -1,37 +1,20 @@
-/* jshint node: true */
+import _         from 'lodash';
+import Q         from 'q';
+import path      from 'path';
+import glob      from 'glob';
+import wallpaper from 'wallpaper';
+import Random    from 'random-js';
+import notifier  from 'node-notifier';
 
-'use strict';
+const engine = Random.engines.nativeMath;
 
-var _         = require('lodash');
-var Q         = require('q');
-var path      = require('path');
-var glob      = require('glob');
-var wallpaper = require('wallpaper');
-var Random    = require('random-js');
-var notifier  = require('node-notifier');
-var engine    = Random.engines.nativeMath;
+export function rotateWallpaper(pattern, notify = false) {
+  let deferred = Q.defer();
 
-module.exports = function rotateWallpaper(pattern, notify) {
-  notify = _.isBoolean(notify) ? notify : false;
-
-  var deferred   = Q.defer();
-
-  glob(pattern, function(err, matches) {
-    if (err) {
-      return deferred.reject(err);
-    }
-
-    var image = Random.pick(engine, matches);
-    wallpaper.set(image).then(() => {
-      if (notify) {
-        notifier.notify({
-          title: 'Wallpaper Shuffle',
-          message: 'Changing wallpaper!'
-        });
-      }
-    });
-
-
+  glob(pattern, (err, matches) => {
+    if (err) return deferred.reject(err);
+    let image = Random.pick(engine, matches);
+    wallpaper.set(image);
     deferred.resolve(image);
   });
 
