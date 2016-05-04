@@ -56,6 +56,7 @@ const argv = yargs
 
 const daemonScript = path.join(__dirname, '..', 'lib', 'daemon.js');
 
+const logError        = (err) => console.error(err.message);
 const isRunning       = () => io.exists(argv.pid);
 const getProcessJSON  = () => io.read(argv.pid).then(JSON.parse);
 const getPID          = () => getProcessJSON().then((json) => json.pid);
@@ -106,7 +107,7 @@ const actions = {
       if (!count) {
         throw new Error('No wallpapers found!');
       }
-    })
+    }, logError)
     .then(() => {
       let daemon = child.spawn(daemonScript, [], {
         env: process.env,
@@ -124,7 +125,7 @@ const actions = {
       };
 
       return io.write(argv.pid, JSON.stringify(processInfo)).then((pid) => daemon);
-    })
+    }, logError)
     .then((daemon) => {
       daemon.on('message', (status) => {
         if (status.running) {
@@ -138,25 +139,39 @@ const actions = {
 
       daemon.send({ pattern: pathGlob, interval: milliseconds, notify: argv.notify });
       daemon.unref();
-    });
+    }, logError);
   },
 
   stop() {
     return isRunning()
-      .then(getPIDIfRunning)
+      .then((exists) => {
+        if (!exists) {
+          console.log(chalk.bold.red('not running'));
+          process.exit(1);
+        }
+
+        return getPID();
+      }, logError)
       .then((pid) => {
         process.kill(pid, 'SIGTERM');
         return io.remove(argv.pid);
-      })
+      }, logError)
       .then(() => {
         console.log(chalk.magenta.bold('stopped'));
         process.exit(0);
-      });
+      }, logError);
   },
 
   pause() {
     return isRunning()
-      .then(getPIDIfRunning)
+      .then((exists) => {
+        if (!exists) {
+          console.log(chalk.bold.red('not running'));
+          process.exit(1);
+        }
+
+        return getPID();
+      })
       .then((pid) => {
         process.kill(pid, 'SIGUSR1');
         console.log(chalk.bold.green('play/pause'));
@@ -166,7 +181,14 @@ const actions = {
 
   next() {
     return isRunning()
-      .then(getPIDIfRunning)
+      .then((exists) => {
+        if (!exists) {
+          console.log(chalk.bold.red('not running'));
+          process.exit(1);
+        }
+
+        return getPID();
+      })
       .then((pid) => {
         process.kill(pid, 'SIGUSR2');
         console.log(chalk.bold.green('changing wallpaper'));
