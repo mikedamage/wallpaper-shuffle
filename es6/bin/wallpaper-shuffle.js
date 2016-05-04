@@ -101,8 +101,8 @@ const actions = {
         console.log(chalk.yellow.bold('Already running!'));
         process.exit();
       }
-    })
-    .then(() => countWallpapers(pathGlob))
+    }, logError)
+    .then(() => countWallpapers(pathGlob), logError)
     .then((count) => {
       if (!count) {
         throw new Error('No wallpapers found!');
