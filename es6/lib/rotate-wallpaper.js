@@ -1,6 +1,4 @@
-import _         from 'lodash';
 import Q         from 'q';
-import path      from 'path';
 import glob      from 'glob';
 import wallpaper from 'wallpaper';
 import Random    from 'random-js';
