@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import rotate   from './rotate-wallpaper';
-import notifier from 'node-notifier';
+import { rotateWallpaper } from './rotate-wallpaper';
+import notifier            from 'node-notifier';
 
 let instance;
 
@@ -10,6 +10,8 @@ class Daemon {
     this.pattern  = params.pattern;
     this.interval = params.interval;
     this.notify   = !!params.notify || false;
+
+    console.log('Daemon: starting');
   }
 
   startTimer() {
@@ -36,7 +38,7 @@ class Daemon {
   }
 
   rotate() {
-    rotate(this.pattern, this.notify);
+    return rotateWallpaper(this.pattern, this.notify);
   }
 }
 
@@ -60,4 +62,8 @@ process.on('SIGUSR2', () => {
 process.on('SIGTERM', () => {
   instance.stopTimer();
   process.exit();
+});
+
+process.on('exit', () => {
+  console.log('Daemon: Exiting!');
 });

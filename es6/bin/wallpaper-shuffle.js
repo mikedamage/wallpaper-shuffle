@@ -16,6 +16,7 @@ import moment     from 'moment';
 import prettyjson from 'prettyjson';
 import child      from 'child_process';
 import yargs      from 'yargs';
+import fs         from 'fs';
 
 const argv = yargs
   .command('start', 'Begin rotating wallpapers')
@@ -46,6 +47,11 @@ const argv = yargs
     description: 'Enable desktop notifications',
     default: false,
     alias: 'notify'
+  })
+  .option('l', {
+    description: 'Daemon logfile',
+    default: null,
+    alias: 'log'
   })
   .option('h', { alias: 'help' })
   .help('help')
@@ -109,9 +115,12 @@ const actions = {
       }
     }, logError)
     .then(() => {
+
+      let out = argv.log ? fs.openSync(argv.log, 'a') : 'ignore';
+      let err = argv.log ? fs.openSync(argv.log, 'a') : 'ignore';
       let daemon = child.spawn(daemonScript, [], {
         env: process.env,
-        stdio: [ 'ignore', 'ignore', 'ignore', 'ipc' ],
+        stdio: [ 'ignore', out, err, 'ipc' ],
         detached: true
       });
 
