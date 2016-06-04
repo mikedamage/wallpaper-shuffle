@@ -70,11 +70,8 @@ const countWallpapers = (pathGlob) => {
   let deferred = Q.defer();
 
   glob(pathGlob, (err, matches) => {
-    if (err) {
-      deferred.resolve(0);
-    } else {
-      deferred.resolve(matches.length);
-    }
+    if (err) return deferred.resolve(0);
+    deferred.resolve(matches.length);
   });
 
   return deferred.promise;
