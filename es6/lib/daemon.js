@@ -11,10 +11,14 @@ class Daemon {
     this.interval = params.interval;
     this.notify   = !!params.notify || false;
 
-    console.log('Daemon: starting');
+    console.log('Starting wallpaper-shuffle daemon.');
+    console.log('Interval: ' + this.interval);
+    console.log('Pattern: ' + this.pattern);
   }
 
   startTimer() {
+    console.log('Starting rotation timer!');
+
     this.timer = setInterval(this.rotate.bind(this), this.interval);
 
     this.notify && notifier.notify({
@@ -27,6 +31,8 @@ class Daemon {
     clearInterval(this.timer);
     this.timer = 0;
 
+    console.log('Rotation timer stopped.');
+
     this.notify && notifier.notify({
       title: 'Wallpaper Shuffle',
       message: 'Stopped!'
@@ -34,18 +40,25 @@ class Daemon {
   }
 
   toggleTimer() {
+    console.log('Toggling rotation timer.');
     return (this.timer ? this.stopTimer() : this.startTimer());
   }
 
   rotate() {
+    console.log('Rotating wallpaper!');
     return rotateWallpaper(this.pattern, this.notify);
+  }
+
+  announceRunning() {
+    console.log('Telling master process that daemon is running.');
+    process.send({ running: true });
   }
 }
 
 process.on('message', (params) => {
   instance = new Daemon(params);
   instance.startTimer();
-  instance.rotate().then(() => process.send({ running: true }));
+  instance.rotate().then(instance.announceRunning);
 });
 
 process.on('SIGUSR1', () => {
