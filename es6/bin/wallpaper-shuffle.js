@@ -9,7 +9,6 @@ import Q          from 'q';
 import io         from 'q-io/fs';
 import path       from 'path';
 import glob       from 'glob';
-import pkg        from '../../package.json';
 import chalk      from 'chalk';
 import moment     from 'moment';
 import prettyjson from 'prettyjson';
