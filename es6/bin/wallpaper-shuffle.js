@@ -33,22 +33,13 @@ const countWallpapers = (pathGlob) => {
   return deferred.promise;
 };
 
-const parseTime = (time) => {
+function parseTime(time) {
   let split     = time.split(' ');
   let timeNum   = parseFloat(split[0]);
   let timeUnits = split.slice(1).join(' ');
   let interval  = moment.duration(timeNum, timeUnits);
   return interval.asMilliseconds();
 }
-
-const getPIDIfRunning = (exists) => {
-  if (!exists) {
-    console.log(chalk.bold.red('not running'));
-    process.exit(1);
-  }
-
-  return getPID();
-};
 
 const actions = {
   start() {
@@ -86,7 +77,7 @@ const actions = {
         }
       };
 
-      return io.write(argv.pid, JSON.stringify(processInfo)).then((pid) => daemon);
+      return io.write(argv.pid, JSON.stringify(processInfo)).then(() => daemon);
     }, logError)
     .then((daemon) => {
       daemon.on('message', (status) => {
