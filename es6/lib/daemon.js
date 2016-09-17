@@ -6,10 +6,10 @@ import notifier            from 'node-notifier';
 let instance;
 
 class Daemon {
-  constructor(params) {
-    this.pattern  = params.pattern;
-    this.interval = params.interval;
-    this.notify   = !!params.notify || false;
+  constructor({ pattern, interval, notify }) {
+    this.pattern  = pattern;
+    this.interval = interval;
+    this.notify   = !!notify || false;
 
     console.log('Starting wallpaper-shuffle daemon.');
     console.log('Interval: ' + this.interval);
@@ -67,9 +67,7 @@ process.on('SIGUSR1', () => {
 });
 
 process.on('SIGUSR2', () => {
-  if (instance.pattern) {
-    instance.rotate();
-  }
+  instance.pattern && instance.rotate();
 });
 
 process.on('SIGTERM', () => {

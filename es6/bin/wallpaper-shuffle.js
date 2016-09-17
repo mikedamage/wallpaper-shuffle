@@ -4,7 +4,6 @@
  * A daemon that randomly rotates wallpaper
  */
 
-import _          from 'lodash';
 import Q          from 'q';
 import io         from 'q-io/fs';
 import path       from 'path';
